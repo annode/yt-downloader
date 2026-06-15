@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube Downloader Web</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --line: #d9dee7;
+      --text: #172033;
+      --muted: #667085;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --green: #14804a;
+      --red: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .shell {
+      width: min(1120px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 16px 0 28px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .muted { color: var(--muted); font-size: 13px; }
+    .mono { font-family: Consolas, "Courier New", monospace; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .card-body { padding: 16px; }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input[type="url"] {
+      width: 100%;
+      height: 42px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .mode-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .mode {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .mode strong { display: block; font-size: 14px; }
+    .mode span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    button.primary:hover { background: var(--blue-dark); }
+    button:disabled { opacity: .55; cursor: wait; }
+
+    .message {
+      margin-top: 12px;
+      min-height: 20px;
+      font-size: 13px;
+    }
+
+    .message.error { color: var(--red); }
+    .message.ok { color: var(--green); }
+
+    .queue-panel {
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    .downloads-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 9px 8px;
+      border-top: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { color: var(--muted); font-size: 12px; }
+    td a { color: var(--blue); text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+
+    .job-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .job {
+      display: grid;
+      gap: 4px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+      font-size: 13px;
+    }
+
+    .job-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .job-title {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 12px;
+    }
+
+    .empty {
+      padding: 20px 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+      .mode-row { grid-template-columns: 1fr; }
+      .status-pill { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>YouTube Downloader</h1>
+        <div class="muted">Web UI analog zum Scanner. Status: <span id="status-text" class="mono">Bereit.</span></div>
+      </div>
+      <div id="status-pill" class="status-pill">Bereit.</div>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <div class="card-body">
+          <label for="url">YouTube-URL</label>
+          <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+
+          <div class="mode-row">
+            <label class="mode">
+              <input type="radio" name="mode" value="video" checked>
+              <span><strong>Video</strong><span>MP4, bis 360p</span></span>
+            </label>
+            <label class="mode">
+              <input type="radio" name="mode" value="audio">
+              <span><strong>Audio</strong><span>MP3, 192 kbit/s</span></span>
+            </label>
+            <label class="mode">
+              <input type="radio" name="mode" value="transcript">
+              <span><strong>Transkript</strong><span>TXT via Whisper</span></span>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="start-btn" class="primary" type="button">Zur Queue hinzufuegen</button>
+            <button id="refresh-btn" type="button">Liste aktualisieren</button>
+          </div>
+          <div id="message" class="message"></div>
+
+          <div class="queue-panel">
+            <div class="downloads-head">
+              <h2>Queue</h2>
+              <span id="queue-count" class="muted">0 wartend</span>
+            </div>
+            <div id="queue"></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <div class="card-body">
+          <div class="downloads-head">
+            <h2>Downloads</h2>
+            <span id="download-count" class="muted">0 Dateien</span>
+          </div>
+          <div id="downloads"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
